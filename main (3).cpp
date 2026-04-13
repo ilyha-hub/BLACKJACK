@@ -1,0 +1,150 @@
+#include <iostream>
+#include <ctime>
+#include <cstdlib>
+#include <windows.h>
+
+using namespace std;
+
+void wait(int dots) {
+    for (int i = 0; i < dots; i++) {
+        Sleep(600);
+        cout << ". ";
+    }
+    cout << endl;
+}
+int getCard() {
+    return (rand() % 10) + 2;
+}
+void checkAce(int &score, int &aces) {
+    if (score > 21 and aces > 0) {
+        score -= 10;
+        aces--;
+        cout << "(Туз засчитан как 1. Теперь очков: " << score << ")" << endl;
+    }
+}
+void menu(int &money, double &multiplier) {
+    system("color 0F");
+    system("cls");
+    cout << "ЗДАРОВА ЭТО КАЗИК" << endl;
+    cout << "СКОЛЬКО У ТЕБЯ ДЕНЕГ С СОБОЙ? (в долларах): ";
+    cin >> money;
+    cout << "ВВЕДИ МНОЖИТЕЛЬ ВЫИГРЫША: ";
+    cin >> multiplier;
+}
+void startGame(int &balance, double multiplier) {
+    system("color 0F");
+    int bet;
+    cout << "\nТвой баланс: " << balance << "$ (Множитель: x" << multiplier << ")" << endl;
+    cout << "Твоя ставка: ";
+    cin >> bet;
+    if (bet > balance or bet <= 0) {
+        cout << "У тебя нет столько денег! Иди работай!" << endl;
+        Sleep(2000);
+        return;
+    }
+    int myScore = 0, MyAces = 0;
+    int dealerScore = 0, DealerAces = 0;
+    int d1 = getCard(); if (d1 == 11) DealerAces++;
+    int d2 = getCard(); if (d2 == 11) DealerAces++;
+    dealerScore = d1 + d2;
+    cout << "\n   РАЗДАЧА КАРТ   " << endl;
+    cout << "Дилер кладет две карты рубашкой вверх" << endl;
+    wait(2);
+    for (int i = 1; i <= 2; i++) {
+        int card = getCard();
+        myScore += card;
+        if (card == 11) MyAces++;
+        cout << "Твоя " << i << "-я карта: [" << card << "]" << endl;
+        Sleep(800);
+    }
+    while (true) {
+        checkAce(myScore, MyAces);
+        cout << "\nТвои очки: " << myScore << endl;
+        if (myScore >= 21) break;
+        cout << "1 - Взять еще, 0 - Хватит: ";
+        int choice;
+        cin >> choice;
+        if (choice == 1) {
+            int card = getCard();
+            myScore += card;
+            if (card == 11) MyAces++;
+            cout << "Вытянул: [" << card << "]" << endl;
+            Sleep(500);
+        } else break;
+    }
+    if (myScore > 21) {
+        system("color 0C");
+        cout << "\nИТОГ: " << myScore << ". ПЕРЕБОР! Проигрыш " << bet << "$" << endl;
+        balance -= bet;
+        Sleep(3000);
+        return;
+    }
+    cout << "\n   ДИЛЕР ОТКРЫВАЕТСЯ   " << endl;
+    cout << "Первая карта дилера: [" << d1 << "]" << endl;
+    Sleep(1000);
+    cout << "Вторая карта дилера: [" << d2 << "]" << endl;
+    Sleep(1000);
+    while (dealerScore < 17) {
+        checkAce(dealerScore, DealerAces);
+        if (dealerScore >= 17) break;
+        cout << "Дилер тянет карту";
+        wait(4);
+        int card = getCard();
+        dealerScore += card;
+        if (card == 11) DealerAces++;
+        cout << "Дилер вытянул: [" << card << "] (Всего: " << dealerScore << ")" << endl;
+    }
+    checkAce(dealerScore, DealerAces);
+    cout << "ИТОГОВЫЙ СЧЕТ: ТЫ (" << myScore << ") | ДИЛЕР (" << dealerScore << ")" << endl;
+    if (dealerScore > 21 or myScore > dealerScore) {
+        system("color 0A");
+        int winnings = static_cast<int>(bet * multiplier); //отсекаем дробную часть
+        cout << "ПОБЕДА! Ты поднял " << winnings << "$ (Ставка: " << bet << "$ x" << multiplier << ")" << endl;
+        cout << R"(           .:-:.                      .:--:.                      .:-:.
+           :*##-                      .+##*.                      -###:
+       ..::=###+::..               ..:-*##*-:...              ..::+###=:...
+      :+###########*:.           .=############=.           .-*###########+:
+     :###*-.....-*###-          .*###+.....:+###*.          -###*:.....=####:
+     -####+:..........          .*###*:...........          =####=...........
+     .-*#######**=-:.            .+########*+=:.            .=*#######*+=-..
+       ..:-=+**#####*-.            ..:-=+*######+.            ..:-=+*######*-.
+    .-===:.  ....=####-        .-===-.   ...-*###+.        :====:   ...:+###*:
+    .+###*-......=###*.        .-####=......:*###=.        .*###+:......=###+.
+     .-*############=.           :+############+:.          .=*###########*=.
+       ..::=###+-:..               ..:-*##*-::..              ..:-+###=-:..
+           :*##-                      .+##*.                      -###:
+           .:--.                      .:--:.                      .---.           )" << endl;
+        balance += winnings;
+    } else if (myScore < dealerScore) {
+        system("color 0C");
+        cout << "ПРОИГРЫШ! Эх ты, дилер забрал твои " << bet << "$" << endl;
+        balance -= bet;
+    } else {
+        cout << "НИЧЬЯ! Остаешься при своих." << endl;
+    }
+    Sleep(5000);
+}
+
+int main() {
+    setlocale(LC_ALL, "Russian");
+    srand(time(0));
+    int money = 0;
+    double multiplier = 1.0;
+    menu(money, multiplier);
+    while (money > 0) {
+        system("cls");
+        startGame(money, multiplier);
+        if (money <= 0) {
+            system("cls");
+            system("color 0C");
+            cout << "ТЫ БАНКРОТ! Охрана выкинула тебя из казино." << endl;
+            break;
+        }
+        cout << "Играем еще? (1 - ДА, 0 - ВЫХОД): ";
+        int choice;
+        cin >> choice;
+        if (choice == 0) break;
+    }
+    cout << "\nТвой остаток: " << money << "$ До встречи!" << endl;
+    return 0;
+}
